@@ -15,6 +15,7 @@ class Main:
 
         self.font = pygame.font.SysFont("3270 Nerd Font Mono", 20)
         self.font_big = pygame.font.SysFont("3270 Nerd Font Mono", 29)
+        self.font_bigger = pygame.font.SysFont("3270 Nerd Font Mono", 42)
 
         self.big_board = board.Board(self._rect_pad(self.screen_rect, settings.BOARD_PADDING))
         for i in range(9):
@@ -30,6 +31,8 @@ class Main:
         self.current_move_i = -1
 
         self.quit = False
+        self.won = False
+        self.god = False
 
     def _rect_pad(self, rect: pygame.Rect, padding: int) -> pygame.Rect:
         return pygame.Rect(
@@ -58,7 +61,12 @@ class Main:
         return i == self.current_move_i or self.current_move_i == -1
 
     def _valid_move(self, i, j) -> bool:
-        return self._right_tile_i(i) and self.big_board.tiles[i].tiles[j].player == 0
+        return (
+            not self.won
+            and self._right_tile_i(i)
+            and self.big_board.tiles[i].tiles[j].player == 0
+            and self.big_board.tiles[i].winner_tiles() is None
+        ) or self.god
 
     def run(self):
         while not self.quit:
@@ -67,6 +75,9 @@ class Main:
 
     def update(self):
         self.handle_events()
+
+        if self.big_board.winner_boards():
+            self.won = True
 
     def render(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -84,9 +95,28 @@ class Main:
 
         for i, mini_board in enumerate(self.big_board.tiles):
 
+            if winner := mini_board.winner_tiles():
+                surf = self.font_bigger.render(
+                    settings.PLAYER_SYMBOLS[winner],
+                    True,
+                    settings.COLOR_MARK,
+                    settings.COLOR_BOARD_2,
+                )
+                pygame.draw.rect(self.screen, settings.COLOR_BOARD_2, mini_board.rect)
+                self.screen.blit(
+                    surf,
+                    (
+                        mini_board.rect.centerx - surf.get_rect().width / 2,
+                        mini_board.rect.centery - surf.get_rect().height / 2,
+                    ),
+                )
+                continue
+
             is_next_move = self._valid_move(mouse_tile_i, mouse_tile_j) and i == mouse_tile_j
 
-            if i == self.current_move_i:
+            if self.won:
+                mini_board.draw(self.screen, settings.COLOR_BOARD_2)
+            elif i == self.current_move_i:
                 mini_board.draw(self.screen, settings.COLOR_BOARD_4)
                 if is_next_move:
                     hint_rect = mini_board.rect
@@ -98,7 +128,9 @@ class Main:
 
             for j, tile in enumerate(mini_board.tiles):
 
-                if self._right_tile_i(i) and i == mouse_tile_i and j == mouse_tile_j and tile.player == 0:
+                if self.won:
+                    tile.draw(self.screen, settings.COLOR_BOARD_3)
+                elif i == mouse_tile_i and j == mouse_tile_j and self._valid_move(i, j):
                     tile.draw(self.screen, settings.COLOR_BOARD_1)
                 else:
                     tile.draw(self.screen, settings.COLOR_BOARD_3)
@@ -112,12 +144,13 @@ class Main:
             )
             self.screen.blit(surf, (x, hint_rect.top))
 
-        surf = self.font_big.render(
-            settings.PLAYER_SYMBOLS[self.current_move_player], True, settings.COLOR_BOARD_1, settings.COLOR_BOARD_4
-        )
-        rect = pygame.Rect(mouse_x, mouse_y, 32, 32)
-        pygame.draw.rect(self.screen, settings.COLOR_BOARD_4, rect)
-        self.screen.blit(surf, (mouse_x + 8, mouse_y))
+        if not self.won:
+            surf = self.font_big.render(
+                settings.PLAYER_SYMBOLS[self.current_move_player], True, settings.COLOR_BOARD_1, settings.COLOR_BOARD_4
+            )
+            rect = pygame.Rect(mouse_x, mouse_y, 32, 32)
+            pygame.draw.rect(self.screen, settings.COLOR_BOARD_4, rect)
+            self.screen.blit(surf, (mouse_x + 8, mouse_y))
 
         pygame.display.flip()
 
@@ -145,7 +178,10 @@ class Main:
 
         if mouse_tile and self._valid_move(mouse_tile_i, mouse_tile_j):
             mouse_tile.player = self.current_move_player
-            self.current_move_i = mouse_tile_j
+            if self.big_board.tiles[mouse_tile_j].winner_tiles():
+                self.current_move_i = -1
+            else:
+                self.current_move_i = mouse_tile_j
             self.current_move_player = 1 + (self.current_move_player % settings.NUM_PLAYERS)
 
 
