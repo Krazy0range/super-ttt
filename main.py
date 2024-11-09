@@ -13,6 +13,9 @@ class Main:
         self.screen_rect = self.screen.get_rect()
         pygame.display.set_caption("super-ttt")
 
+        self.font = pygame.font.SysFont("3270 Nerd Font Mono", 20)
+        self.font_big = pygame.font.SysFont("3270 Nerd Font Mono", 29)
+
         self.big_board = board.Board(self._rect_pad(self.screen_rect, settings.BOARD_PADDING))
         for i in range(9):
             rect = self._rect_grid(self.big_board.rect, settings.BOARD_PADDING, i)
@@ -22,6 +25,9 @@ class Main:
                 mini_board_tile = board.Tile(rect)
                 mini_board.tiles.append(mini_board_tile)
             self.big_board.tiles.append(mini_board)
+
+        self.current_move_player = 1
+        self.current_move_i = -1
 
         self.quit = False
 
@@ -48,6 +54,12 @@ class Main:
                 tiles.append(tile)
         return tiles
 
+    def _right_tile_i(self, i) -> bool:
+        return i == self.current_move_i or self.current_move_i == -1
+
+    def _valid_move(self, i, j) -> bool:
+        return self._right_tile_i(i) and self.big_board.tiles[i].tiles[j].player == 0
+
     def run(self):
         while not self.quit:
             self.update()
@@ -58,17 +70,54 @@ class Main:
 
     def render(self):
         mouse_x, mouse_y = pygame.mouse.get_pos()
+        mouse_tile_i, mouse_tile_j = -1, -1
+        for i, mini_board in enumerate(self.big_board.tiles):
+            for j, tile in enumerate(mini_board.tiles):
+                if tile.rect.collidepoint(mouse_x, mouse_y):
+                    mouse_tile_i, mouse_tile_j = i, j
 
         self.screen.fill(settings.COLOR_BOARD_0)
 
+        hint_rect = None
+
         self.big_board.draw(self.screen, settings.COLOR_BOARD_1)
-        for mini_board in self.big_board.tiles:
-            mini_board.draw(self.screen, settings.COLOR_BOARD_2)
-            for tile in mini_board.tiles:
-                if tile.rect.collidepoint(mouse_x, mouse_y):
+
+        for i, mini_board in enumerate(self.big_board.tiles):
+
+            is_next_move = self._valid_move(mouse_tile_i, mouse_tile_j) and i == mouse_tile_j
+
+            if i == self.current_move_i:
+                mini_board.draw(self.screen, settings.COLOR_BOARD_4)
+                if is_next_move:
+                    hint_rect = mini_board.rect
+            elif is_next_move:
+                mini_board.draw(self.screen, settings.COLOR_BOARD_4)
+                hint_rect = mini_board.rect
+            else:
+                mini_board.draw(self.screen, settings.COLOR_BOARD_2)
+
+            for j, tile in enumerate(mini_board.tiles):
+
+                if self._right_tile_i(i) and i == mouse_tile_i and j == mouse_tile_j and tile.player == 0:
                     tile.draw(self.screen, settings.COLOR_BOARD_1)
                 else:
                     tile.draw(self.screen, settings.COLOR_BOARD_3)
+
+        if hint_rect:
+            surf = self.font.render("next move", True, settings.COLOR_BOARD_2, settings.COLOR_BOARD_4)
+            x = (
+                hint_rect.right
+                if hint_rect.right + surf.get_rect().width <= settings.SCREEN_WIDTH
+                else hint_rect.left - surf.get_rect().width
+            )
+            self.screen.blit(surf, (x, hint_rect.top))
+
+        surf = self.font_big.render(
+            settings.PLAYER_SYMBOLS[self.current_move_player], True, settings.COLOR_BOARD_1, settings.COLOR_BOARD_4
+        )
+        rect = pygame.Rect(mouse_x, mouse_y, 32, 32)
+        pygame.draw.rect(self.screen, settings.COLOR_BOARD_4, rect)
+        self.screen.blit(surf, (mouse_x + 8, mouse_y))
 
         pygame.display.flip()
 
@@ -88,14 +137,16 @@ class Main:
     def handle_click(self, event: pygame.event.Event):
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        tile = None
-        for t in self._get_all_tiles():
-            if t.rect.collidepoint(mouse_x, mouse_y):
-                tile = t
+        mouse_tile_i, mouse_tile_j, mouse_tile = -1, -1, None
+        for i, mini_board in enumerate(self.big_board.tiles):
+            for j, tile in enumerate(mini_board.tiles):
+                if tile.rect.collidepoint(mouse_x, mouse_y):
+                    mouse_tile_i, mouse_tile_j, mouse_tile = i, j, tile
 
-        if tile:
-            tile.symbol += 1
-            tile.symbol %= 3
+        if mouse_tile and self._valid_move(mouse_tile_i, mouse_tile_j):
+            mouse_tile.player = self.current_move_player
+            self.current_move_i = mouse_tile_j
+            self.current_move_player = 1 + (self.current_move_player % settings.NUM_PLAYERS)
 
 
 if __name__ == "__main__":
