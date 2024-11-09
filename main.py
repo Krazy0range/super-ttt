@@ -14,58 +14,30 @@ class Main:
         pygame.display.set_caption("super-ttt")
 
         self.font = pygame.font.SysFont("3270 Nerd Font Mono", 20)
-        self.font_big = pygame.font.SysFont("3270 Nerd Font Mono", 29)
-        self.font_bigger = pygame.font.SysFont("3270 Nerd Font Mono", 42)
+        self.font_big = pygame.font.SysFont("3270 Nerd Font Mono", 24)
+        self.font_bigger = pygame.font.SysFont("3270 Nerd Font Mono", 36)
 
-        self.big_board = board.MetaBoard(self._rect_pad(self.screen_rect, settings.BOARD_PADDING))
-        for i in range(9):
-            rect = self._rect_grid(self.big_board.rect, settings.BOARD_PADDING, i)
-            mini_board = board.Board(rect)
-            for j in range(9):
-                rect = self._rect_grid(mini_board.rect, settings.BOARD_PADDING, j)
-                mini_board_tile = board.Tile(rect)
-                mini_board.tiles.append(mini_board_tile)
-            self.big_board.boards.append(mini_board)
+        big_board_rect = pygame.Rect(
+            settings.BOARD_PADDING,
+            settings.BOARD_PADDING,
+            settings.SCREEN_WIDTH / 2,
+            settings.SCREEN_HEIGHT / 2,
+        )
+        self.big_board = board.MetaBoard(big_board_rect)
 
         self.current_move_player = 1
         self.current_move_i = -1
 
         self.quit = False
         self.won = False
-        self.god = False
-
-    def _rect_pad(self, rect: pygame.Rect, padding: int) -> pygame.Rect:
-        return pygame.Rect(
-            rect.left + padding,
-            rect.top + padding,
-            rect.width - padding * 2,
-            rect.height - padding * 2,
-        )
-
-    def _rect_grid(self, big_rect: pygame.Rect, padding: int, i: int) -> pygame.Rect:
-        return pygame.Rect(
-            big_rect.left + (i % 3) * (big_rect.width - settings.BOARD_PADDING) / 3 + settings.BOARD_PADDING,
-            big_rect.top + (i // 3) * (big_rect.height - settings.BOARD_PADDING) / 3 + settings.BOARD_PADDING,
-            (big_rect.width - settings.BOARD_PADDING * 4) / 3,
-            (big_rect.height - settings.BOARD_PADDING * 4) / 3,
-        )
-
-    def _get_all_tiles(self) -> list[board.Tile]:
-        tiles = []
-        for mini_board in self.big_board.boards:
-            for tile in mini_board.tiles:
-                tiles.append(tile)
-        return tiles
-
-    def _right_tile_i(self, i) -> bool:
-        return i == self.current_move_i or self.current_move_i == -1
+        self.god = True
 
     def _valid_move(self, i, j) -> bool:
         return (
             not self.won
-            and self._right_tile_i(i)
+            and (i == self.current_move_i or self.current_move_i == -1)
             and self.big_board.boards[i].tiles[j].player == 0
-            and self.big_board.boards[i].winner() is None
+            and self.big_board.boards[i].winner() == 0
         ) or self.god
 
     def run(self):
@@ -95,9 +67,9 @@ class Main:
 
         for i, mini_board in enumerate(self.big_board.boards):
 
-            if winner := mini_board.winner():
+            if mini_board.winner():
                 surf = self.font_bigger.render(
-                    settings.PLAYER_SYMBOLS[winner],
+                    settings.PLAYER_SYMBOLS[mini_board.winner()],
                     True,
                     settings.COLOR_MARK,
                     settings.COLOR_BOARD_2,
@@ -136,10 +108,10 @@ class Main:
                     tile.draw(self.screen, settings.COLOR_BOARD_3)
 
         if hint_rect:
-            surf = self.font.render("next move", True, settings.COLOR_BOARD_2, settings.COLOR_BOARD_4)
+            surf = self.font.render("next move", True, settings.COLOR_BOARD_1, settings.COLOR_BOARD_4)
             x = (
                 hint_rect.right
-                if hint_rect.right + surf.get_rect().width <= settings.SCREEN_WIDTH
+                if hint_rect.right + surf.get_rect().width <= self.big_board.rect.right
                 else hint_rect.left - surf.get_rect().width
             )
             self.screen.blit(surf, (x, hint_rect.top))
@@ -177,7 +149,7 @@ class Main:
                     mouse_tile_i, mouse_tile_j, mouse_tile = i, j, tile
 
         if mouse_tile and self._valid_move(mouse_tile_i, mouse_tile_j):
-            mouse_tile.player = self.current_move_player
+            mouse_tile.set_player(self.current_move_player)
             if self.big_board.boards[mouse_tile_j].winner():
                 self.current_move_i = -1
             else:
