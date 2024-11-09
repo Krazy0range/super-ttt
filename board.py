@@ -3,56 +3,56 @@ import pygame
 import settings
 
 
-class Board:
+class MetaBoard:
 
     def __init__(self, rect: pygame.Rect):
-        self.rect = rect
-        self.tiles = []
+        self.rect: pygame.Rect = rect
+        self.boards: list[Board] = []
 
     def draw(self, screen: pygame.Surface, color: pygame.Color):
         pygame.draw.rect(screen, color, self.rect)
 
-    def winner_boards(self):
+    def winner(self):
         for player in range(1, settings.NUM_PLAYERS + 1):
             vertical_left = (
-                self.tiles[0].winner_tiles() == player
-                and self.tiles[3].winner_tiles() == player
-                and self.tiles[6].winner_tiles() == player
+                self.boards[0].winner() == player
+                and self.boards[3].winner() == player
+                and self.boards[6].winner() == player
             )
             vertical_middle = (
-                self.tiles[1].winner_tiles() == player
-                and self.tiles[4].winner_tiles() == player
-                and self.tiles[7].winner_tiles() == player
+                self.boards[1].winner() == player
+                and self.boards[4].winner() == player
+                and self.boards[7].winner() == player
             )
             vertical_right = (
-                self.tiles[2].winner_tiles() == player
-                and self.tiles[5].winner_tiles() == player
-                and self.tiles[8].winner_tiles() == player
+                self.boards[2].winner() == player
+                and self.boards[5].winner() == player
+                and self.boards[8].winner() == player
             )
             horizontal_top = (
-                self.tiles[0].winner_tiles() == player
-                and self.tiles[1].winner_tiles() == player
-                and self.tiles[2].winner_tiles() == player
+                self.boards[0].winner() == player
+                and self.boards[1].winner() == player
+                and self.boards[2].winner() == player
             )
             horizontal_middle = (
-                self.tiles[3].winner_tiles() == player
-                and self.tiles[4].winner_tiles() == player
-                and self.tiles[5].winner_tiles() == player
+                self.boards[3].winner() == player
+                and self.boards[4].winner() == player
+                and self.boards[5].winner() == player
             )
             horizontal_bottom = (
-                self.tiles[6].winner_tiles() == player
-                and self.tiles[7].winner_tiles() == player
-                and self.tiles[8].winner_tiles() == player
+                self.boards[6].winner() == player
+                and self.boards[7].winner() == player
+                and self.boards[8].winner() == player
             )
             diagonal_topleft_bottomright = (
-                self.tiles[0].winner_tiles() == player
-                and self.tiles[4].winner_tiles() == player
-                and self.tiles[8].winner_tiles() == player
+                self.boards[0].winner() == player
+                and self.boards[4].winner() == player
+                and self.boards[8].winner() == player
             )
             diagonal_topright_bottomleft = (
-                self.tiles[2].winner_tiles() == player
-                and self.tiles[4].winner_tiles() == player
-                and self.tiles[6].winner_tiles() == player
+                self.boards[2].winner() == player
+                and self.boards[4].winner() == player
+                and self.boards[6].winner() == player
             )
             if (
                 vertical_left
@@ -67,7 +67,17 @@ class Board:
                 return player
         return None
 
-    def winner_tiles(self):
+
+class Board:
+
+    def __init__(self, rect: pygame.Rect):
+        self.rect: pygame.Rect = rect
+        self.tiles: list[Tile] = []
+
+    def draw(self, screen: pygame.Surface, color: pygame.Color):
+        pygame.draw.rect(screen, color, self.rect)
+
+    def winner(self):
         for player in range(1, settings.NUM_PLAYERS + 1):
             vertical_left = (
                 self.tiles[0].player == player and self.tiles[3].player == player and self.tiles[6].player == player
@@ -110,9 +120,9 @@ class Board:
 class Tile:
 
     def __init__(self, rect: pygame.Rect):
-        self.rect = rect
-        self.player = 0
-        self.font = pygame.font.SysFont("3270 Nerd Font Mono", 32)
+        self.rect: pygame.Rect = rect
+        self.player: int = 0
+        self.font: pygame.font.SysFont = pygame.font.SysFont("3270 Nerd Font Mono", 32)
 
     def draw(self, screen: pygame.Surface, color: pygame.Color):
         pygame.draw.rect(screen, color, self.rect)
