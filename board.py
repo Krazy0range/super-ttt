@@ -10,6 +10,11 @@ class Board:
         self.rect: pygame.Rect = rect
         self.analysis: Analysis = Analysis()
 
+        self.winner_changed = True
+        self.almost_winners_changed = True
+        self.cached_analysis_winner = None
+        self.cached_analysis_almost_winners = None
+
     def _rect_grid(self, big_rect: pygame.Rect, i: int) -> pygame.Rect:
         return pygame.Rect(
             big_rect.left + (i % 3) * (big_rect.width - settings.BOARD_PADDING) / 3 + settings.BOARD_PADDING,
@@ -22,7 +27,16 @@ class Board:
         pygame.draw.rect(screen, color, self.rect)
 
     def winner(self) -> int:
-        return self.analysis.winner()
+        if self.winner_changed:
+            self.winner_changed = False
+            self.cached_analysis_winner = self.analysis.winner()
+        return self.cached_analysis_winner
+
+    def almost_winners(self):
+        if self.almost_winners_changed:
+            self.almost_winners_changed = False
+            self.cached_analysis_almost_winners = self.analysis.almost_winners()
+        return self.cached_analysis_almost_winners
 
 
 class MetaBoard(Board):
@@ -40,14 +54,15 @@ class MetaBoard(Board):
 
     def update_analysis(self):
         self.analysis.board = self.to_list()
+        self.cached_analysis_winner = self.analysis.winner()
+        self.cached_analysis_almost_winners = self.analysis.almost_winners()
 
 
 class TileBoard(Board):
 
     def __init__(self, rect: pygame.Rect, parent: MetaBoard):
-        self.rect: pygame.Rect = rect
+        super().__init__(rect)
         self.tiles: list[Tile] = []
-        self.analysis: Analysis = Analysis()
         self.parent: MetaBoard = parent
 
         for i in range(9):
@@ -59,6 +74,8 @@ class TileBoard(Board):
 
     def update_analysis(self):
         self.analysis.board = self.to_list()
+        self.cached_analysis_winner = self.analysis.winner()
+        self.cached_analysis_almost_winners = self.analysis.almost_winners()
         self.parent.update_analysis()
 
 

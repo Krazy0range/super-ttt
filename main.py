@@ -21,7 +21,7 @@ class Main:
             settings.BOARD_PADDING,
             settings.BOARD_PADDING,
             settings.SCREEN_WIDTH / 2,
-            settings.SCREEN_HEIGHT / 2,
+            settings.SCREEN_WIDTH / 2,
         )
         self.big_board = board.MetaBoard(big_board_rect)
 
@@ -61,7 +61,7 @@ class Main:
 
         self.screen.fill(settings.COLOR_BOARD_0)
 
-        hint_rect = None
+        hints = []
 
         self.big_board.draw(self.screen, settings.COLOR_BOARD_1)
 
@@ -94,9 +94,11 @@ class Main:
                     hint_rect = mini_board.rect
             elif is_next_move:
                 mini_board.draw(self.screen, settings.COLOR_BOARD_4)
-                hint_rect = mini_board.rect
+                hints.append({"rect": mini_board.rect, "msg": "next move"})
             else:
                 mini_board.draw(self.screen, settings.COLOR_BOARD_2)
+
+            almost_winners = mini_board.almost_winners()
 
             for j, tile in enumerate(mini_board.tiles):
 
@@ -104,11 +106,16 @@ class Main:
                     tile.draw(self.screen, settings.COLOR_BOARD_3)
                 elif i == mouse_tile_i and j == mouse_tile_j and self._valid_move(i, j):
                     tile.draw(self.screen, settings.COLOR_BOARD_1)
+                elif j in [v for values in almost_winners.values() for v in values]:
+                    tile.draw(self.screen, settings.COLOR_BOARD_ALERT_1)
+                elif self.big_board.boards[j].winner():
+                    tile.draw(self.screen, settings.COLOR_BOARD_ALERT_0)
                 else:
                     tile.draw(self.screen, settings.COLOR_BOARD_3)
 
-        if hint_rect:
-            surf = self.font.render("next move", True, settings.COLOR_BOARD_1, settings.COLOR_BOARD_4)
+        for hint in hints:
+            hint_rect = hint["rect"]
+            surf = self.font.render(hint["msg"], True, settings.COLOR_BOARD_1, settings.COLOR_BOARD_4)
             x = (
                 hint_rect.right
                 if hint_rect.right + surf.get_rect().width <= self.big_board.rect.right

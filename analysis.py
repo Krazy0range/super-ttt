@@ -29,3 +29,23 @@ class Analysis:
             elif vertical_right or horizontal_bottom:
                 return self.board[8]
         return 0
+
+    def almost_winners(self) -> dict[int, list[int]]:
+        board_copy = list(self.board)
+        players = list(set(self.board) - {0})
+        almost_players = dict()
+
+        for i, p in enumerate(self.board):
+            if p != 0:
+                continue
+            for _p in players:
+                self.board[i] = _p
+                if self.winner():
+                    if _p not in almost_players:
+                        almost_players[_p] = [i]
+                    else:
+                        almost_players[_p].append(i)
+                self.board = list(board_copy)
+
+        self.board = list(board_copy)
+        return almost_players
