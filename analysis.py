@@ -31,6 +31,9 @@ class Analysis:
         return 0
 
     def almost_winners(self) -> dict[int, list[int]]:
+        if self.winner():
+            return None
+
         board_copy = list(self.board)
         players = list(set(self.board) - {0})
         almost_players = dict()

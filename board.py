@@ -38,6 +38,9 @@ class Board:
             self.cached_analysis_almost_winners = self.analysis.almost_winners()
         return self.cached_analysis_almost_winners
 
+    def almost_winning_squares(self):
+        return [v for values in self.almost_winners().values() for v in values]
+
 
 class MetaBoard(Board):
 
@@ -83,7 +86,7 @@ class Tile:
 
     def __init__(self, rect: pygame.Rect, parent: TileBoard):
         self.rect: pygame.Rect = rect
-        self.font: pygame.font.SysFont = pygame.font.SysFont("3270 Nerd Font Mono", 22)
+        self.font: pygame.font.SysFont = pygame.freetype.SysFont("3270 Nerd Font Mono", 22)
         self.player: int = 0
         self.parent: TileBoard = parent
 
@@ -92,8 +95,8 @@ class Tile:
 
         letter = settings.PLAYER_SYMBOLS[self.player]
 
-        surf = self.font.render(letter, True, settings.COLOR_MARK)
-        screen.blit(surf, (self.rect.centerx - 6, self.rect.centery - 12))
+        surf = self.font.render(letter, settings.COLOR_MARK)[0]
+        screen.blit(surf, (self.rect.centerx - 5, self.rect.centery - 4))
 
     def set_player(self, v):
         self.player = v
