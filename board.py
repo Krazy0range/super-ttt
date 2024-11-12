@@ -41,6 +41,9 @@ class Board:
     def almost_winning_squares(self):
         return [v for values in self.almost_winners().values() for v in values]
 
+    def almost_winning_players(self):
+        return list(self.almost_winners().keys())
+
 
 class MetaBoard(Board):
 

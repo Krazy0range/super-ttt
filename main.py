@@ -190,15 +190,20 @@ class Main:
             tile.draw(self.screen, settings.COLOR_BOARD_3)
 
     def tile_hints(self, i, j, mini_board):
+        next_player = settings.PLAYER_SYMBOLS[1 + (self.current_move_player % settings.NUM_PLAYERS)]
         hints = []
         if j in mini_board.almost_winning_squares():
-            hints.append("wins this mini board")
+            players = mini_board.almost_winning_players()
+            werbs = " ".join([settings.PLAYER_SYMBOLS[p] for p in players])
+            hints.append(f"({werbs}) move wins this mini board")
             if i == j:
                 hints.append("next move can play anywhere")
         if self.big_board.boards[j].almost_winners() and not (i == j and j in mini_board.almost_winning_squares()):
-            hints.append("next move can win mini board")
+            players = self.big_board.boards[j].almost_winning_players()
+            werbs = " ".join([settings.PLAYER_SYMBOLS[p] for p in players])
+            hints.append(f"next ({werbs}) move can win mini board")
         if self.big_board.boards[j].winner():
-            hints.append("next move can play anywhere")
+            hints.append(f"next move ({next_player}) can play anywhere")
         return hints
 
     def render_mini_board(self, mouse_tile_i, mouse_tile_j, i, mini_board, next_move):
